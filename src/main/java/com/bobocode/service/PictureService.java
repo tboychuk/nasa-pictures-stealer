@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.util.Comparator;
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -73,4 +76,24 @@ public class PictureService {
                 .queryParam("sol", sol)
                 .toUriString();
     }
+
+    public byte[] loadLargestPicture() {
+        var localPictures = pictureRepository.findAll();
+        var largestPicture = localPictures.parallelStream()
+                .map(picture -> loadSize(picture))
+                .max(Comparator.comparing(PictureDto::size))
+                .orElseThrow();
+        return restTemplate.getForObject(largestPicture.imageLocation, byte[].class);
+    }
+
+    private PictureDto loadSize(Picture picture) {
+        var initialHeaders = restTemplate.headForHeaders(picture.getImgSrc());
+        URI imageLocation = initialHeaders.getLocation();
+        var redirectHeaders = restTemplate.headForHeaders(imageLocation);
+        return new PictureDto(imageLocation, redirectHeaders.getContentLength());
+    }
+
+    record PictureDto(URI imageLocation, long size) {
+    }
+    
 }

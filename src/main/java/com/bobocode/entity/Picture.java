@@ -24,7 +24,7 @@ public class Picture {
     @Column(nullable = false)
     private Long nasaId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String imgSrc;
 
     @Column(nullable = false, insertable = false, updatable = false)
